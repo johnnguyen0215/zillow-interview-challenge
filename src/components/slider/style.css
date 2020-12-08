@@ -1,0 +1,21 @@
+.slider {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  height: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.image-container {
+  display: inline-block;
+  height: 40rem;
+  width: 80rem;
+  background: transparent;
+}
+
+img {
+  height: 40rem;
+  width: 80rem;
+  cursor: pointer;
+}
