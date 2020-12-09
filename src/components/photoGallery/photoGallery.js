@@ -7,7 +7,7 @@ import { useState } from 'react';
 const PhotoGallery = (props) => {
   const { images } = props;
 
-  const [imageNum, setImageNum] = useState(0);
+  const [imageNum, setImageNum] = useState(1);
 
   const handleNavigateBefore = () => {
     if (imageNum === 0) {
@@ -24,6 +24,7 @@ const PhotoGallery = (props) => {
       setImageNum(imageNum + 1);
     }
   }
+
 
   return (
     <div className="photo-gallery">

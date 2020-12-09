@@ -1,6 +1,6 @@
 import './style.css';
 import classnames from 'classnames';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const Slider = (props) => {
   const {
@@ -9,65 +9,98 @@ const Slider = (props) => {
   } = props;
 
   const imageRefs = useRef([]);
-
   const sliderRef = useRef(null);
+
   const prevScreenX = useRef(null);
+  const prevTouchScreenX = useRef(null);
   const blankImgRef = useRef(null)
+
+  const [galleryImages, setGalleryImages] = useState([]);
+
+  const reverse = useRef(false);
 
   const handleOnDragStart = (event) => {
     event.dataTransfer.setDragImage(blankImgRef.current, 0, 0);
   }
 
   const handleOnDrag = (event) => {
-    processScroll(event.screenX, event.clientY);
+    processScroll(event.screenX, prevScreenX);
+  }
+
+  const handleOnTouchMove = (event) => {
+    const { touches } = event;
+
+    const touch = touches && touches[0];
+
+    processScroll(touch.screenX, prevTouchScreenX);
   }
 
   const handleOnDragEnd = (event) => {
-    const screenX = event.screenX;
+    prevScreenX.current = null;
   }
 
-  const processScroll = (screenX) => {
-    if (prevScreenX.current && screenX > 0) {
-      const difference = prevScreenX.current - screenX;
+  const handleOnTouchEnd = (event) => {
+    prevTouchScreenX.current = null;
+  }
+
+  const processScroll = (screenX, prevScreenXRef) => {
+    if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.length - 2].offsetLeft && !reverse.current) {
+      sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
+      reverse.current = false;
+    }
+
+    if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.length - 1].offsetLeft && reverse.current) {
+      sliderRef.current.scrollLeft = imageRefs.current[2].offsetLeft;
+      reverse.current = false;
+    }
+
+    if (sliderRef.current.scrollLeft <= imageRefs.current[1].offsetLeft) {
+      sliderRef.current.scrollLeft = imageRefs.current[galleryImages.length - 2].offsetLeft;
+      reverse.current = true;
+    }
+
+    if (prevScreenXRef.current && screenX > 0) {
+      const difference = prevScreenXRef.current - screenX;
+
       sliderRef.current.scrollLeft += difference;
     }
 
-    prevScreenX.current = screenX;
-  }
-
-  const checkNeighbors = () => {
-    let leftNeighbor = null;
-    let rightNeighbor = null;
-
-    if (imageNum === 0) {
-    }
-  }
-
-  const snapToRight = () => {
+    prevScreenXRef.current = screenX;
   }
 
   useEffect(() => {
     const image = new Image(0,0);
     image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     blankImgRef.current = image;
-  }, []);
+
+    console.log(imageRefs.current);
+
+    // The 3 is to account for the cloned images for smoother behavior.
+    if (imageRefs.current.length > 0) {
+      sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
+    }
+  }, [galleryImages]);
+
 
   useEffect(() => {
-    console.log('This effect fired');
-    const newActiveImage = imageRefs.current[imageNum];
+    let imagesWithClones = images;
 
-    if (newActiveImage) {
-      newActiveImage.scrollIntoView({
-        behavior: 'smooth'
-      })
+    if (images.length > 1) {
+      imagesWithClones = [
+        images[images.length - 1],
+        ...images,
+        images[0],
+        images[1]
+      ]
     }
-  }, [imageNum]);
 
+    setGalleryImages(imagesWithClones);
+  }, [images]);
 
   return (
     <div className="slider" ref={sliderRef}>
       {
-        images.map((image, index) => {
+        galleryImages.map((image, index) => {
           const classes = classnames({
             '-active': imageNum === index,
           });
@@ -77,8 +110,12 @@ const Slider = (props) => {
               onDrag={handleOnDrag}
               onDragEnd={handleOnDragEnd}
               onDragStart={handleOnDragStart}
-              key={index}src={image.url} alt={image.caption}
+              onTouchMove={handleOnTouchMove}
+              onTouchEnd={handleOnTouchEnd}
+              key={index}src={image.url}
+              alt={image.caption}
               ref={(node) => {
+                console.log('Before this');
                 imageRefs.current[index] = node;
               }}
             />
