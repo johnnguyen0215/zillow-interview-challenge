@@ -35,33 +35,73 @@ const Slider = (props) => {
     processScroll(touch.screenX, prevTouchScreenX);
   }
 
-  const handleOnDragEnd = (event) => {
+  const handleOnDragEnd = () => {
+    scrollToClosestImage();
     prevScreenX.current = null;
   }
 
-  const handleOnTouchEnd = (event) => {
+  const handleOnTouchEnd = () => {
+    scrollToClosestImage();
     prevTouchScreenX.current = null;
   }
 
+  const scrollToClosestImage = () => {
+    const scrollLeft = sliderRef.current.scrollLeft;
+
+    const leftImageIndex = imageRefs?.current?.findIndex((imageRef) => {
+      return scrollLeft > imageRef.offsetLeft && scrollLeft < imageRef.offsetLeft + imageRef.offsetWidth;
+    });
+
+    const leftImage = imageRefs.current[leftImageIndex];
+
+    const rightImage = imageRefs.current[leftImageIndex + 1];
+
+    const leftDisplayedWidth = (leftImage.offsetLeft + leftImage.offsetWidth) - scrollLeft;
+
+    const rightDisplayedWidth = (rightImage.offsetWidth - (rightImage.offsetLeft - scrollLeft));
+
+    let closestImage = leftImage;
+
+    if (leftDisplayedWidth < rightDisplayedWidth) {
+      closestImage = rightImage;
+    }
+
+    closestImage.scrollIntoView({
+      behavior: 'smooth'
+    })
+  }
+
+  /** Edge Cases
+   *
+   * If the scroll is < 0 we jump to image number 5
+   *    If at image number 5 and we get close to image number 4, simply use scroll into view and it should scroll left.
+   *    If at image number 5 and we get close to image number 6, this means we have jumped to image number 2, simply use scroll into view and it should scroll right.
+   *
+   * If the scroll is > offset of image number 5, we will have jumped back to number 1, simply scroll into image number 1's view
+   * If the scroll is > offset of image number 5, we will have jumped back to number 1, but if we decide to go back
+   */
+
   const processScroll = (screenX, prevScreenXRef) => {
     if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.length - 2].offsetLeft && !reverse.current) {
+      console.log('Passed upper bound');
       sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
       reverse.current = false;
     }
 
     if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.length - 1].offsetLeft && reverse.current) {
+      console.log('Passed last');
       sliderRef.current.scrollLeft = imageRefs.current[2].offsetLeft;
       reverse.current = false;
     }
 
     if (sliderRef.current.scrollLeft <= imageRefs.current[1].offsetLeft) {
+      console.log('Going into reverse');
       sliderRef.current.scrollLeft = imageRefs.current[galleryImages.length - 2].offsetLeft;
       reverse.current = true;
     }
 
     if (prevScreenXRef.current && screenX > 0) {
       const difference = prevScreenXRef.current - screenX;
-
       sliderRef.current.scrollLeft += difference;
     }
 
@@ -75,7 +115,6 @@ const Slider = (props) => {
 
     console.log(imageRefs.current);
 
-    // The 3 is to account for the cloned images for smoother behavior.
     if (imageRefs.current.length > 0) {
       sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
     }
@@ -97,28 +136,33 @@ const Slider = (props) => {
     setGalleryImages(imagesWithClones);
   }, [images]);
 
+
   return (
     <div className="slider" ref={sliderRef}>
       {
         galleryImages.map((image, index) => {
           const classes = classnames({
+            'image-container': true,
             '-active': imageNum === index,
           });
           return (
-            <img
+            <div
               className={classes}
               onDrag={handleOnDrag}
               onDragEnd={handleOnDragEnd}
               onDragStart={handleOnDragStart}
               onTouchMove={handleOnTouchMove}
               onTouchEnd={handleOnTouchEnd}
-              key={index}src={image.url}
-              alt={image.caption}
               ref={(node) => {
-                console.log('Before this');
                 imageRefs.current[index] = node;
               }}
-            />
+              key={index}
+            >
+              <img
+                src={image.url}
+                alt={image.caption}
+              />
+            </div>
           );
         })
       }

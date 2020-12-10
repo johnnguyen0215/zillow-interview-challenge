@@ -29,10 +29,19 @@
   height: 100%;
   display: flex;
   flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+.image-container {
+  display: inline-block;
+  height: 40rem;
+  width: 74.2rem;
+  flex: 0 0 auto;
 }
 
 img {
-  height: 40rem;
-  width: 80rem;
+  height: 100%;
+  width: 100%;
   cursor: pointer;
 }
