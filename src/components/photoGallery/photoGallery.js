@@ -11,7 +11,7 @@ const PhotoGallery = (props) => {
   const imageNum = useRef(1);
 
   const handleNavigateBefore = () => {
-    debounce(() => {
+    const debounced = debounce((clear) => {
       if (imageNum.current === 1) {
         sliderRef.current.scrollLeft = imageRefs.current[galleryImages.length - 2].offsetLeft;
         imageNum.current = galleryImages.length - 3;
@@ -27,13 +27,18 @@ const PhotoGallery = (props) => {
           behavior: 'smooth'
         })
       }
-    }, 1000);
+
+      console.log(clear);
+    }, 1000, true);
+
+    debounced();
+
+    debounced.flush();
   }
 
   const handleNavigateNext = () => {
-    debounce(() => {
-      console.log('got here');
-      if (imageNum.current === 4) {
+    const debounced = debounce(() => {
+      if (imageNum.current === galleryImages.length - 2) {
         sliderRef.current.scrollLeft = imageRefs.current[0].offsetLeft;
         imageNum.current = 1;
 
@@ -46,7 +51,11 @@ const PhotoGallery = (props) => {
           behavior: 'smooth'
         });
       }
-    }, 1000)();
+    }, 1000, true);
+
+    debounced();
+
+    debounced.flush();
   }
 
   const imageRefs = useRef([]);
