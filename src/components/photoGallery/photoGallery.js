@@ -27,7 +27,7 @@ const PhotoGallery = (props) => {
           behavior: 'smooth'
         })
       }
-    }, 1000)();
+    }, 1000);
   }
 
   const handleNavigateNext = () => {
