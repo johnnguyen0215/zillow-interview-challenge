@@ -3,38 +3,86 @@ import NavigateNext from '@material-ui/icons/NavigateNext';
 import { Fab } from '@material-ui/core';
 import classnames from 'classnames';
 import './style.css';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 
 const PhotoGallery = (props) => {
   const { images } = props;
   const [imageNum, setImageNum] = useState(1);
-  const [buttonsDisabled, setButtonsDisabled] = useState(false);
+  const [buttonsDisabled, _setButtonsDisabled] = useState(false);
+  const buttonsDisabledRef = useRef(buttonsDisabled);
+
+  const mouseDownElement = useRef(null);
   const prevImageNum = useRef(imageNum);
 
   const imageRefs = useRef([]);
   const sliderRef = useRef(null);
 
-  const prevClientX = useRef(null);
+  const prevPageX = useRef(null);
   const prevTouchClientX = useRef(null);
   const blankImgRef = useRef(null)
 
-  const [galleryImages, setGalleryImages] = useState([]);
+  const galleryImages = useRef([
+    images[images.length - 1],
+    ...images,
+    images[0],
+    images[1]
+  ]);
+
+  const setButtonsDisabled = (disabledValue) => {
+    buttonsDisabledRef.current = disabledValue;
+    _setButtonsDisabled(disabledValue);
+  }
+
+  const processScroll = useCallback((pageX, prevPageXRef) => {
+    if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.current.length - 2].offsetLeft && !reverse.current) {
+      sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
+      reverse.current = false;
+    }
+
+    if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.current.length - 1].offsetLeft && reverse.current) {
+      sliderRef.current.scrollLeft = imageRefs.current[2].offsetLeft;
+      reverse.current = false;
+    }
+
+    if (sliderRef.current.scrollLeft <= imageRefs.current[1].offsetLeft) {
+      sliderRef.current.scrollLeft = imageRefs.current[galleryImages.current.length - 2].offsetLeft;
+      reverse.current = true;
+    }
+
+    if (prevPageXRef.current) {
+      const difference = prevPageXRef.current - pageX;
+      sliderRef.current.scrollLeft += difference;
+    }
+
+    prevPageXRef.current = pageX;
+  }, [galleryImages]);
+
 
   const handleNavigateBefore = () => {
     setButtonsDisabled(true);
 
     if (imageNum === 1) {
-      setImageNum(galleryImages.length - 3);
+      setImageNum(galleryImages.current.length - 3);
     } else {
       setImageNum(imageNum - 1);
     }
   }
 
+  const isGalleryImage = (element) => {
+    return element?.classList?.contains('gallery-img');
+  }
+
   const handleNavigateNext = () => {
     setButtonsDisabled(true);
 
-    if (imageNum === (galleryImages.length - 3)) {
+    const galleryLength = galleryImages.current.length;
+
+    if (imageNum === galleryLength - 3) {
       setImageNum(1);
+    } else if (imageNum === galleryLength - 1) {
+      setImageNum(3);
+    } else if (imageNum === galleryLength - 2) {
+      setImageNum(2);
     } else {
       setImageNum(imageNum + 1);
     }
@@ -42,24 +90,46 @@ const PhotoGallery = (props) => {
 
   const reverse = useRef(false);
 
-  const handleOnDragStart = (event) => {
+  const handleImageDrag = (event) => {
     event.dataTransfer.setDragImage(blankImgRef.current, 0, 0);
   }
 
-  const handleOnDrag = (event) => {
-    processScroll(event.clientX, prevClientX);
+  const handleOnMouseDown = (event) => {
+    if (!buttonsDisabledRef.current) {
+      mouseDownElement.current = event.target;
+    }
   }
+
+  const handleOnMouseMove = useCallback((event) => {
+    if (isGalleryImage(mouseDownElement.current) && !buttonsDisabledRef.current) {
+      processScroll(event.pageX, prevPageX);
+    }
+  }, [mouseDownElement, processScroll, buttonsDisabledRef]);
+
+  const handleOnMouseUp = useCallback(() => {
+    if (isGalleryImage(mouseDownElement.current) && !buttonsDisabledRef.current) {
+      scrollToClosestImage();
+      mouseDownElement.current = null;
+      prevPageX.current = null;
+    }
+
+  }, [mouseDownElement, buttonsDisabledRef]);
+
+  // const handleOnDrag = (event) => {
+  //   console.log(event);
+  //   processScroll(event.pageX, prevClientX);
+  // }
 
   const handleOnTouchMove = (event) => {
     const { touches } = event;
     const touch = touches && touches[0];
-    processScroll(touch.clientX, prevTouchClientX);
+    processScroll(touch.pageX, prevTouchClientX);
   }
 
-  const handleOnDragEnd = () => {
-    scrollToClosestImage();
-    prevClientX.current = null;
-  }
+  // const handleOnDragEnd = () => {
+  //   scrollToClosestImage();
+  //   prevClientX.current = null;
+  // }
 
   const handleOnTouchEnd = (event) => {
     scrollToClosestImage();
@@ -70,7 +140,7 @@ const PhotoGallery = (props) => {
     const scrollLeft = sliderRef.current.scrollLeft;
 
     const leftImageIndex = imageRefs?.current?.findIndex((imageRef) => {
-      return scrollLeft > imageRef.offsetLeft && scrollLeft < imageRef.offsetLeft + imageRef.offsetWidth;
+      return scrollLeft >= imageRef.offsetLeft && scrollLeft < imageRef.offsetLeft + imageRef.offsetWidth;
     });
 
     const rightImageIndex = leftImageIndex + 1;
@@ -100,31 +170,7 @@ const PhotoGallery = (props) => {
     setImageNum(closestImageIndex);
   }
 
-  const processScroll = (clientX, prevClientXRef) => {
-    if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.length - 2].offsetLeft && !reverse.current) {
-      sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
-      reverse.current = false;
-    }
-
-    if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.length - 1].offsetLeft && reverse.current) {
-      sliderRef.current.scrollLeft = imageRefs.current[2].offsetLeft;
-      reverse.current = false;
-    }
-
-    if (sliderRef.current.scrollLeft <= imageRefs.current[1].offsetLeft) {
-      sliderRef.current.scrollLeft = imageRefs.current[galleryImages.length - 2].offsetLeft;
-      reverse.current = true;
-    }
-
-    if (prevClientX.current && clientX > 0) {
-      const difference = prevClientX.current - clientX;
-      sliderRef.current.scrollLeft += difference;
-    }
-
-    prevClientX.current = clientX;
-  }
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     const image = new Image(0,0);
     image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     blankImgRef.current = image;
@@ -132,41 +178,39 @@ const PhotoGallery = (props) => {
     if (imageRefs.current.length > 0) {
       sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
     }
-  }, [galleryImages]);
-
-
-  useEffect(() => {
-    let imagesWithClones = images;
-
-    if (images.length > 1) {
-      imagesWithClones = [
-        images[images.length - 1],
-        ...images,
-        images[0],
-        images[1]
-      ]
-    }
-
-    setGalleryImages(imagesWithClones);
-  }, [images]);
+  }, []);
 
   useEffect(() => {
+    const prevNum = prevImageNum.current;
+    const galleryLength = galleryImages.current?.length;
+    const slider = sliderRef.current;
+    const imgRefs = imageRefs.current;
+
     if (
-      galleryImages.length > 0 &&
-      ![0, galleryImages.length - 1, galleryImages.length - 2].includes(imageNum)
+      galleryLength > 0 &&
+      prevNum !== imageNum
     ) {
       let scrollToNum = null;
 
-      if (imageNum > prevImageNum.current) {
-        if ((prevImageNum.current === 1) && imageNum === (galleryImages.length - 3)) {
-          sliderRef.current.scrollLeft = imageRefs.current[galleryImages.length - 2].offsetLeft;
-          scrollToNum = galleryImages.length - 3;
+      if (prevNum === galleryLength - 2 && imageNum === 2) {
+        slider.scrollLeft = imgRefs[1].offsetLeft;
+        scrollToNum = imageNum;
+      } else if (prevNum === galleryLength - 1 && imageNum === 3) {
+        slider.scrollLeft = imgRefs[2].offsetLeft;
+        scrollToNum = imageNum;
+      } else if (prevNum === 0 && imageNum === galleryLength - 4) {
+        slider.scrollLeft = imgRefs[4].offsetLeft;
+        scrollToNum = imageNum;
+      }  else if (imageNum > prevNum) {
+        if ((prevNum === 1) && imageNum === (galleryLength - 3)) {
+          slider.scrollLeft = imgRefs[galleryLength - 2].offsetLeft;
+          scrollToNum = galleryLength - 3;
         } else {
           scrollToNum = imageNum;
         }
-      } else if (imageNum < prevImageNum.current) {
-        if ((prevImageNum.current === galleryImages.length -3) && imageNum === 1) {
-          sliderRef.current.scrollLeft = imageRefs.current[0].offsetLeft;
+      } else if (imageNum < prevNum) {
+        if ((prevNum === galleryLength -3) && imageNum === 1) {
+          slider.scrollLeft = imgRefs[0].offsetLeft;
           scrollToNum = 1;
         } else {
           scrollToNum = imageNum;
@@ -185,9 +229,17 @@ const PhotoGallery = (props) => {
         }, 1000)
       }
     }
-
   }, [imageNum, galleryImages, prevImageNum])
 
+  useEffect(() => {
+    window.document.addEventListener('mouseup', handleOnMouseUp)
+    window.document.addEventListener('mousemove', handleOnMouseMove);
+
+    return () => {
+      window.removeEventListener('mouseup', handleOnMouseUp);
+      window.removeEventListener('mousemove', handleOnMouseMove);
+    }
+  }, [handleOnMouseUp, handleOnMouseMove]);
 
   return (
     <div className="photo-gallery">
@@ -196,7 +248,7 @@ const PhotoGallery = (props) => {
       </Fab>
       <div className="slider" ref={sliderRef}>
         {
-          galleryImages.map((image, index) => {
+          galleryImages.current.map((image, index) => {
             const classes = classnames({
               'image-container': true,
               '-active': imageNum === index,
@@ -204,21 +256,23 @@ const PhotoGallery = (props) => {
             return (
               <div
                 className={classes}
-                onDrag={handleOnDrag}
-                onDragEnd={handleOnDragEnd}
-                onDragStart={handleOnDragStart}
+                onMouseDown={handleOnMouseDown}
                 onTouchMove={handleOnTouchMove}
                 onTouchEnd={handleOnTouchEnd}
+                onDrag={handleImageDrag}
                 ref={(node) => {
                   imageRefs.current[index] = node;
                 }}
                 key={index}
               >
                 <img
+                  className="gallery-img"
+                  draggable="false"
                   src={image.url}
                   alt={image.caption}
-
-                />
+                >
+                </img>
+                <div className="img-caption">{image.caption}</div>
               </div>
             );
           })

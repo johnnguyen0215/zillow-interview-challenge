@@ -39,10 +39,10 @@
   flex: 0 0 auto;
 }
 
-img {
-  height: 100%;
-  width: 100%;
-  cursor: pointer;
+.img-caption {
+  color: black;
+  background-color: white;
+  font-size: 12pt;
 }
 
 .MuiFab-root.fab-button.-left {
