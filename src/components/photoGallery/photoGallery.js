@@ -10,7 +10,7 @@ const PhotoGallery = (props) => {
   const { images } = props;
   const [imageNum, setImageNum] = useState(1);
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
-  const prevImageNum = usePrevious(imageNum);
+  const prevImageNum = useRef(imageNum);
 
   const imageRefs = useRef([]);
   const sliderRef = useRef(null);
@@ -58,8 +58,8 @@ const PhotoGallery = (props) => {
   }
 
   const handleOnDragEnd = () => {
-    scrollToClosestImage();
-    prevScreenX.current = null;
+    // scrollToClosestImage();
+    // prevScreenX.current = null;
   }
 
   const handleOnTouchEnd = (event) => {
@@ -70,26 +70,47 @@ const PhotoGallery = (props) => {
 
   const scrollToClosestImage = () => {
     const scrollLeft = sliderRef.current.scrollLeft;
+
+    console.log('scroll left: ', scrollLeft);
     const leftImageIndex = imageRefs?.current?.findIndex((imageRef) => {
       return scrollLeft > imageRef.offsetLeft && scrollLeft < imageRef.offsetLeft + imageRef.offsetWidth;
     });
+
     const rightImageIndex = leftImageIndex + 1;
+
+    console.log('left: ', leftImageIndex);
+    console.log('right: ', rightImageIndex);
     const leftImage = imageRefs.current[leftImageIndex];
     const rightImage = imageRefs.current[rightImageIndex];
+
+
     const leftDisplayedWidth = (leftImage.offsetLeft + leftImage.offsetWidth) - scrollLeft;
     const rightDisplayedWidth = (rightImage.offsetWidth - (rightImage.offsetLeft - scrollLeft));
 
+    let closestImageIndex = null;
     let closestImage = null;
 
     if (leftDisplayedWidth < rightDisplayedWidth) {
-      closestImage = rightImage;
-    } else {
       closestImage = leftImage;
+      closestImageIndex = rightImageIndex;
+    } else {
+      closestImage = rightImage;
+      closestImageIndex = leftImageIndex;
     }
 
-    closestImage.scrollIntoView({
-      behavior: 'smooth'
-    })
+    // switch(closestImageIndex) {
+    //   case 0:
+    //   case 5:
+    //   case 6:
+
+    // }
+
+    // closestImage.scrollIntoView({
+    //   behavior: 'smooth'
+    // });
+
+    // prevImageNum.current = closestImageIndex;
+    // setImageNum(closestImageIndex);
   }
 
   const processScroll = (screenX, prevScreenXRef) => {
@@ -143,18 +164,21 @@ const PhotoGallery = (props) => {
   }, [images]);
 
   useEffect(() => {
-    if (galleryImages.length > 0) {
+    if (
+      galleryImages.length > 0 &&
+      ![0, galleryImages.length - 1, galleryImages.length - 2].includes(imageNum)
+    ) {
       let scrollToNum = null;
 
-      if (imageNum > prevImageNum) {
-        if ((prevImageNum === 1) && imageNum === (galleryImages.length - 3)) {
+      if (imageNum > prevImageNum.current) {
+        if ((prevImageNum.current === 1) && imageNum === (galleryImages.length - 3)) {
           sliderRef.current.scrollLeft = imageRefs.current[galleryImages.length - 2].offsetLeft;
           scrollToNum = galleryImages.length - 3;
         } else {
           scrollToNum = imageNum;
         }
-      } else if (imageNum < prevImageNum) {
-        if ((prevImageNum === galleryImages.length -3) && imageNum === 1) {
+      } else if (imageNum < prevImageNum.current) {
+        if ((prevImageNum.current === galleryImages.length -3) && imageNum === 1) {
           sliderRef.current.scrollLeft = imageRefs.current[0].offsetLeft;
           scrollToNum = 1;
         } else {
@@ -171,6 +195,8 @@ const PhotoGallery = (props) => {
           setButtonsDisabled(false);
         }, 1000)
       }
+
+      prevImageNum.current = scrollToNum;
     }
 
   }, [imageNum, galleryImages, prevImageNum])
