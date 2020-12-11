@@ -4,7 +4,6 @@ import { Fab } from '@material-ui/core';
 import classnames from 'classnames';
 import './style.css';
 import { useState, useEffect, useRef } from 'react';
-import { usePrevious } from '../../customHooks/usePrevious';
 
 const PhotoGallery = (props) => {
   const { images } = props;
@@ -15,8 +14,8 @@ const PhotoGallery = (props) => {
   const imageRefs = useRef([]);
   const sliderRef = useRef(null);
 
-  const prevScreenX = useRef(null);
-  const prevTouchScreenX = useRef(null);
+  const prevClientX = useRef(null);
+  const prevTouchClientX = useRef(null);
   const blankImgRef = useRef(null)
 
   const [galleryImages, setGalleryImages] = useState([]);
@@ -48,41 +47,36 @@ const PhotoGallery = (props) => {
   }
 
   const handleOnDrag = (event) => {
-    processScroll(event.screenX, prevScreenX);
+    processScroll(event.clientX, prevClientX);
   }
 
   const handleOnTouchMove = (event) => {
     const { touches } = event;
     const touch = touches && touches[0];
-    processScroll(touch.screenX, prevTouchScreenX);
+    processScroll(touch.clientX, prevTouchClientX);
   }
 
   const handleOnDragEnd = () => {
-    // scrollToClosestImage();
-    // prevScreenX.current = null;
+    scrollToClosestImage();
+    prevClientX.current = null;
   }
 
   const handleOnTouchEnd = (event) => {
-    console.log(event);
     scrollToClosestImage();
-    prevTouchScreenX.current = null;
+    prevTouchClientX.current = null;
   }
 
   const scrollToClosestImage = () => {
     const scrollLeft = sliderRef.current.scrollLeft;
 
-    console.log('scroll left: ', scrollLeft);
     const leftImageIndex = imageRefs?.current?.findIndex((imageRef) => {
       return scrollLeft > imageRef.offsetLeft && scrollLeft < imageRef.offsetLeft + imageRef.offsetWidth;
     });
 
     const rightImageIndex = leftImageIndex + 1;
 
-    console.log('left: ', leftImageIndex);
-    console.log('right: ', rightImageIndex);
     const leftImage = imageRefs.current[leftImageIndex];
     const rightImage = imageRefs.current[rightImageIndex];
-
 
     const leftDisplayedWidth = (leftImage.offsetLeft + leftImage.offsetWidth) - scrollLeft;
     const rightDisplayedWidth = (rightImage.offsetWidth - (rightImage.offsetLeft - scrollLeft));
@@ -91,29 +85,22 @@ const PhotoGallery = (props) => {
     let closestImage = null;
 
     if (leftDisplayedWidth < rightDisplayedWidth) {
-      closestImage = leftImage;
+      closestImage = rightImage;
       closestImageIndex = rightImageIndex;
     } else {
-      closestImage = rightImage;
+      closestImage = leftImage;
       closestImageIndex = leftImageIndex;
     }
 
-    // switch(closestImageIndex) {
-    //   case 0:
-    //   case 5:
-    //   case 6:
+    closestImage.scrollIntoView({
+      behavior: 'smooth'
+    });
 
-    // }
-
-    // closestImage.scrollIntoView({
-    //   behavior: 'smooth'
-    // });
-
-    // prevImageNum.current = closestImageIndex;
-    // setImageNum(closestImageIndex);
+    prevImageNum.current = closestImageIndex;
+    setImageNum(closestImageIndex);
   }
 
-  const processScroll = (screenX, prevScreenXRef) => {
+  const processScroll = (clientX, prevClientXRef) => {
     if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.length - 2].offsetLeft && !reverse.current) {
       sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
       reverse.current = false;
@@ -129,12 +116,12 @@ const PhotoGallery = (props) => {
       reverse.current = true;
     }
 
-    if (prevScreenXRef.current && screenX > 0) {
-      const difference = prevScreenXRef.current - screenX;
+    if (prevClientX.current && clientX > 0) {
+      const difference = prevClientX.current - clientX;
       sliderRef.current.scrollLeft += difference;
     }
 
-    prevScreenXRef.current = screenX;
+    prevClientX.current = clientX;
   }
 
   useEffect(() => {
@@ -191,12 +178,12 @@ const PhotoGallery = (props) => {
           behavior: 'smooth'
         })
 
+        prevImageNum.current = scrollToNum;
+
         setTimeout(() => {
           setButtonsDisabled(false);
         }, 1000)
       }
-
-      prevImageNum.current = scrollToNum;
     }
 
   }, [imageNum, galleryImages, prevImageNum])
