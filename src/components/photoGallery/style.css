@@ -1,7 +1,7 @@
 .photo-gallery {
   display: flex;
   height: 40rem;
-  max-width: 80rem;
+  max-width: 70rem;
   position: relative;
 }
 
@@ -29,14 +29,13 @@
   height: 100%;
   display: flex;
   flex-wrap: nowrap;
-  -webkit-overflow-scrolling: touch;
   position: relative;
 }
 
 .image-container {
   display: inline-block;
   height: 40rem;
-  width: 74.2rem;
+  width: 70rem;
   flex: 0 0 auto;
 }
 
@@ -44,4 +43,33 @@ img {
   height: 100%;
   width: 100%;
   cursor: pointer;
+}
+
+.MuiFab-root.fab-button.-left {
+  position: absolute;
+  opacity: 0.5;
+  transition: opacity 1s;
+  z-index: 1;
+  top: 45%;
+  left: 1rem;
+}
+
+.MuiFab-root.fab-button {
+  position: absolute;
+  opacity: 0.5;
+  transition: opacity 0.5s;
+  z-index: 1;
+  top: 45%;
+}
+
+.MuiFab-root.fab-button.-left {
+  left: 1rem;
+}
+
+.MuiFab-root.fab-button.-right {
+  right: 1rem;
+}
+
+.MuiFab-root.fab-button.fab-button:hover {
+  opacity: 1;
 }

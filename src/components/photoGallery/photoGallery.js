@@ -1,62 +1,16 @@
 import NavigateBefore from '@material-ui/icons/NavigateBefore';
 import NavigateNext from '@material-ui/icons/NavigateNext';
+import { Fab } from '@material-ui/core';
 import classnames from 'classnames';
 import './style.css';
 import { useState, useEffect, useRef } from 'react';
-import { debounce } from 'debounce';
+import { usePrevious } from '../../customHooks/usePrevious';
 
 const PhotoGallery = (props) => {
   const { images } = props;
-
-  const imageNum = useRef(1);
-
-  const handleNavigateBefore = () => {
-    const debounced = debounce((clear) => {
-      if (imageNum.current === 1) {
-        sliderRef.current.scrollLeft = imageRefs.current[galleryImages.length - 2].offsetLeft;
-        imageNum.current = galleryImages.length - 3;
-
-        imageRefs.current[imageNum.current].scrollIntoView({
-          behavior: 'smooth'
-        });
-
-        imageNum.current = galleryImages.length - 3;
-      } else {
-        imageNum.current = imageNum.current - 1;
-        imageRefs.current[imageNum.current].scrollIntoView({
-          behavior: 'smooth'
-        })
-      }
-
-      console.log(clear);
-    }, 1000, true);
-
-    debounced();
-
-    debounced.flush();
-  }
-
-  const handleNavigateNext = () => {
-    const debounced = debounce(() => {
-      if (imageNum.current === galleryImages.length - 2) {
-        sliderRef.current.scrollLeft = imageRefs.current[0].offsetLeft;
-        imageNum.current = 1;
-
-        imageRefs.current[imageNum.current].scrollIntoView({
-          behavior: 'smooth'
-        });
-      } else {
-        imageNum.current = imageNum.current + 1;
-        imageRefs.current[imageNum.current].scrollIntoView({
-          behavior: 'smooth'
-        });
-      }
-    }, 1000, true);
-
-    debounced();
-
-    debounced.flush();
-  }
+  const [imageNum, setImageNum] = useState(1);
+  const [buttonsDisabled, setButtonsDisabled] = useState(false);
+  const prevImageNum = usePrevious(imageNum);
 
   const imageRefs = useRef([]);
   const sliderRef = useRef(null);
@@ -66,6 +20,26 @@ const PhotoGallery = (props) => {
   const blankImgRef = useRef(null)
 
   const [galleryImages, setGalleryImages] = useState([]);
+
+  const handleNavigateBefore = () => {
+    setButtonsDisabled(true);
+
+    if (imageNum === 1) {
+      setImageNum(galleryImages.length - 3);
+    } else {
+      setImageNum(imageNum - 1);
+    }
+  }
+
+  const handleNavigateNext = () => {
+    setButtonsDisabled(true);
+
+    if (imageNum === (galleryImages.length - 3)) {
+      setImageNum(1);
+    } else {
+      setImageNum(imageNum + 1);
+    }
+  }
 
   const reverse = useRef(false);
 
@@ -88,52 +62,35 @@ const PhotoGallery = (props) => {
     prevScreenX.current = null;
   }
 
-  const handleOnTouchEnd = () => {
+  const handleOnTouchEnd = (event) => {
+    console.log(event);
     scrollToClosestImage();
     prevTouchScreenX.current = null;
   }
 
   const scrollToClosestImage = () => {
     const scrollLeft = sliderRef.current.scrollLeft;
-
     const leftImageIndex = imageRefs?.current?.findIndex((imageRef) => {
       return scrollLeft > imageRef.offsetLeft && scrollLeft < imageRef.offsetLeft + imageRef.offsetWidth;
     });
-
     const rightImageIndex = leftImageIndex + 1;
-
     const leftImage = imageRefs.current[leftImageIndex];
-
     const rightImage = imageRefs.current[rightImageIndex];
-
     const leftDisplayedWidth = (leftImage.offsetLeft + leftImage.offsetWidth) - scrollLeft;
-
     const rightDisplayedWidth = (rightImage.offsetWidth - (rightImage.offsetLeft - scrollLeft));
 
     let closestImage = null;
 
     if (leftDisplayedWidth < rightDisplayedWidth) {
       closestImage = rightImage;
-      imageNum.current = rightImageIndex;
     } else {
       closestImage = leftImage;
-      imageNum.current = leftImageIndex;
     }
 
     closestImage.scrollIntoView({
       behavior: 'smooth'
     })
   }
-
-  /** Edge Cases
-   *
-   * If the scroll is < 0 we jump to image number 5
-   *    If at image number 5 and we get close to image number 4, simply use scroll into view and it should scroll left.
-   *    If at image number 5 and we get close to image number 6, this means we have jumped to image number 2, simply use scroll into view and it should scroll right.
-   *
-   * If the scroll is > offset of image number 5, we will have jumped back to number 1, simply scroll into image number 1's view
-   * If the scroll is > offset of image number 5, we will have jumped back to number 1, but if we decide to go back
-   */
 
   const processScroll = (screenX, prevScreenXRef) => {
     if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.length - 2].offsetLeft && !reverse.current) {
@@ -185,12 +142,45 @@ const PhotoGallery = (props) => {
     setGalleryImages(imagesWithClones);
   }, [images]);
 
+  useEffect(() => {
+    if (galleryImages.length > 0) {
+      let scrollToNum = null;
+
+      if (imageNum > prevImageNum) {
+        if ((prevImageNum === 1) && imageNum === (galleryImages.length - 3)) {
+          sliderRef.current.scrollLeft = imageRefs.current[galleryImages.length - 2].offsetLeft;
+          scrollToNum = galleryImages.length - 3;
+        } else {
+          scrollToNum = imageNum;
+        }
+      } else if (imageNum < prevImageNum) {
+        if ((prevImageNum === galleryImages.length -3) && imageNum === 1) {
+          sliderRef.current.scrollLeft = imageRefs.current[0].offsetLeft;
+          scrollToNum = 1;
+        } else {
+          scrollToNum = imageNum;
+        }
+      }
+
+      if (scrollToNum) {
+        imageRefs.current[scrollToNum].scrollIntoView({
+          behavior: 'smooth'
+        })
+
+        setTimeout(() => {
+          setButtonsDisabled(false);
+        }, 1000)
+      }
+    }
+
+  }, [imageNum, galleryImages, prevImageNum])
+
 
   return (
     <div className="photo-gallery">
-      <button className="nav-button" onClick={handleNavigateBefore}>
-        <NavigateBefore style={{ color: 'white' }} fontSize="large" />
-      </button>
+      <Fab disabled={buttonsDisabled} onClick={handleNavigateBefore} className="fab-button -left">
+        <NavigateBefore fontSize="large" />
+      </Fab>
       <div className="slider" ref={sliderRef}>
         {
           galleryImages.map((image, index) => {
@@ -221,9 +211,9 @@ const PhotoGallery = (props) => {
           })
         }
       </div>
-      <button className="nav-button" onClick={handleNavigateNext}>
-        <NavigateNext style={{ color: 'white' }} fontSize="large" />
-      </button>
+      <Fab disabled={buttonsDisabled} onClick={handleNavigateNext} className="fab-button -right">
+        <NavigateNext fontSize="large" />
+      </Fab>
     </div>
   )
 }
