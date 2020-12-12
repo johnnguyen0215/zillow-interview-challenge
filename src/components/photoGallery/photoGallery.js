@@ -4,6 +4,7 @@ import { Fab } from '@material-ui/core';
 import classnames from 'classnames';
 import './style.css';
 import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
+import ClampLines from 'react-clamp-lines';
 
 const PhotoGallery = (props) => {
   const { images } = props;
@@ -115,21 +116,11 @@ const PhotoGallery = (props) => {
 
   }, [mouseDownElement, buttonsDisabledRef]);
 
-  // const handleOnDrag = (event) => {
-  //   console.log(event);
-  //   processScroll(event.pageX, prevClientX);
-  // }
-
   const handleOnTouchMove = (event) => {
     const { touches } = event;
     const touch = touches && touches[0];
     processScroll(touch.pageX, prevTouchClientX);
   }
-
-  // const handleOnDragEnd = () => {
-  //   scrollToClosestImage();
-  //   prevClientX.current = null;
-  // }
 
   const handleOnTouchEnd = (event) => {
     scrollToClosestImage();
@@ -259,19 +250,29 @@ const PhotoGallery = (props) => {
                 onMouseDown={handleOnMouseDown}
                 onTouchMove={handleOnTouchMove}
                 onTouchEnd={handleOnTouchEnd}
-                onDrag={handleImageDrag}
                 ref={(node) => {
                   imageRefs.current[index] = node;
                 }}
                 key={index}
               >
-                <div className="img-caption">{image.caption}</div>
+                <div className="img-caption-container">
+                  <ClampLines
+                    text={image.caption}
+                    id={`clamp-${index}`}
+                    lines={2}
+                    ellipsis="..."
+                    moreText="Expand"
+                    lessText="Collapse"
+                    innerElement="p"
+                  />
+                </div>
                 <div className="image-container">
                   <img
                     className="gallery-img"
                     draggable="false"
                     src={image.url}
                     alt={image.caption}
+                    loading="lazy"
                   / >
                 </div>
               </div>
