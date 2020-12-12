@@ -79,11 +79,11 @@ const PhotoGallery = (props) => {
 
     if (imageNum === galleryLength - 3) {
       setImageNum(1);
-    } else if (imageNum === galleryLength - 1) {
-      setImageNum(3);
     } else if (imageNum === galleryLength - 2) {
       setImageNum(2);
-    } else {
+    } else if (imageNum === galleryLength - 1) {
+      setImageNum(3);
+    }  else {
       setImageNum(imageNum + 1);
     }
   }
@@ -220,7 +220,7 @@ const PhotoGallery = (props) => {
       if (scrollToNum) {
         imageRefs.current[scrollToNum].scrollIntoView({
           behavior: 'smooth'
-        })
+        });
 
         prevImageNum.current = scrollToNum;
 
@@ -250,7 +250,7 @@ const PhotoGallery = (props) => {
         {
           galleryImages.current.map((image, index) => {
             const classes = classnames({
-              'image-container': true,
+              'slide-container': true,
               '-active': imageNum === index,
             });
             return (
@@ -265,14 +265,15 @@ const PhotoGallery = (props) => {
                 }}
                 key={index}
               >
-                <img
-                  className="gallery-img"
-                  draggable="false"
-                  src={image.url}
-                  alt={image.caption}
-                >
-                </img>
                 <div className="img-caption">{image.caption}</div>
+                <div className="image-container">
+                  <img
+                    className="gallery-img"
+                    draggable="false"
+                    src={image.url}
+                    alt={image.caption}
+                  / >
+                </div>
               </div>
             );
           })

@@ -1,8 +1,9 @@
 .photo-gallery {
   display: flex;
-  height: 40rem;
+  height: 60rem;
   max-width: 70rem;
   position: relative;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
 }
 
 .nav-button {
@@ -32,17 +33,35 @@
   position: relative;
 }
 
+.slide-container {
+  display: inline-flex;
+  flex-direction: column;
+}
+
 .image-container {
-  display: inline-block;
-  height: 40rem;
+  height: 100%;
   width: 70rem;
-  flex: 0 0 auto;
+}
+
+img {
+  height: 100%;
+  width: 100%;
+  cursor: pointer;
 }
 
 .img-caption {
   color: black;
   background-color: white;
-  font-size: 12pt;
+  font-size: 15pt;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  line-height: 5rem;
+  padding: 1rem 0.5rem;
+  overflow-y: scroll;
+  max-height: 5rem;
+  z-index: 1;
+  width: 69rem;
 }
 
 .MuiFab-root.fab-button.-left {
