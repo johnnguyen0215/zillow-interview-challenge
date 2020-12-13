@@ -12,6 +12,8 @@ const PhotoGallery = (props) => {
   const [buttonsDisabled, _setButtonsDisabled] = useState(false);
   const buttonsDisabledRef = useRef(buttonsDisabled);
 
+  const prevInnerWidth = useRef(null);
+
   const mouseDownElement = useRef(null);
   const prevImageNum = useRef(imageNum);
 
@@ -21,6 +23,8 @@ const PhotoGallery = (props) => {
   const prevPageX = useRef(null);
   const prevTouchClientX = useRef(null);
   const blankImgRef = useRef(null)
+
+  const reverse = useRef(false);
 
   const galleryImages = useRef([
     images[images.length - 1],
@@ -89,11 +93,6 @@ const PhotoGallery = (props) => {
     }
   }
 
-  const reverse = useRef(false);
-
-  const handleImageDrag = (event) => {
-    event.dataTransfer.setDragImage(blankImgRef.current, 0, 0);
-  }
 
   const handleOnMouseDown = (event) => {
     if (!buttonsDisabledRef.current) {
@@ -122,12 +121,42 @@ const PhotoGallery = (props) => {
     processScroll(touch.pageX, prevTouchClientX);
   }
 
+  const handleOnResize = useCallback((event) => {
+    const currentInnerWidth = event.target.innerWidth;
+
+    if (prevInnerWidth.current) {
+      if ((prevInnerWidth.current > 1200 &&  currentInnerWidth <= 1200) || (prevInnerWidth.current < 1200 &&  currentInnerWidth >= 1200)) {
+        sliderRef.current.scrollLeft = imageRefs.current[imageNum].offsetLeft;
+        prevInnerWidth.current = currentInnerWidth;
+      } else if ((prevInnerWidth.current > 992 && currentInnerWidth <= 992) || (prevInnerWidth.current < 992 && currentInnerWidth >= 992)) {
+        sliderRef.current.scrollLeft = imageRefs.current[imageNum].offsetLeft;
+        prevInnerWidth.current = currentInnerWidth;
+      } else if ((prevInnerWidth.current > 768 && currentInnerWidth <= 768) || (prevInnerWidth.current < 768 && currentInnerWidth >= 768)) {
+        sliderRef.current.scrollLeft = imageRefs.current[imageNum].offsetLeft;
+        prevInnerWidth.current = currentInnerWidth;
+      } else if ((prevInnerWidth.current > 480 && currentInnerWidth <= 480) || (prevInnerWidth.current < 480 && currentInnerWidth >= 480)) {
+        sliderRef.current.scrollLeft = imageRefs.current[imageNum].offsetLeft;
+        prevInnerWidth.current = currentInnerWidth;
+      }
+    }
+
+    prevInnerWidth.current = currentInnerWidth;
+  }, [imageNum]);
+
+  const scrollToSlide = (slideElement) => {
+    sliderRef.current.scrollTo({
+      top: 0,
+      left: slideElement.offsetLeft,
+      behavior: 'smooth'
+    })
+  }
+
   const handleOnTouchEnd = (event) => {
     scrollToClosestImage();
     prevTouchClientX.current = null;
   }
 
-  const scrollToClosestImage = () => {
+  const scrollToClosestImage = (instant) => {
     const scrollLeft = sliderRef.current.scrollLeft;
 
     const leftImageIndex = imageRefs?.current?.findIndex((imageRef) => {
@@ -153,9 +182,7 @@ const PhotoGallery = (props) => {
       closestImageIndex = leftImageIndex;
     }
 
-    closestImage.scrollIntoView({
-      behavior: 'smooth'
-    });
+    scrollToSlide(closestImage)
 
     prevImageNum.current = closestImageIndex;
     setImageNum(closestImageIndex);
@@ -209,9 +236,7 @@ const PhotoGallery = (props) => {
       }
 
       if (scrollToNum) {
-        imageRefs.current[scrollToNum].scrollIntoView({
-          behavior: 'smooth'
-        });
+        scrollToSlide(imageRefs.current[scrollToNum]);
 
         prevImageNum.current = scrollToNum;
 
@@ -225,12 +250,14 @@ const PhotoGallery = (props) => {
   useEffect(() => {
     window.document.addEventListener('mouseup', handleOnMouseUp)
     window.document.addEventListener('mousemove', handleOnMouseMove);
+    window.addEventListener('resize', handleOnResize);
 
     return () => {
-      window.removeEventListener('mouseup', handleOnMouseUp);
-      window.removeEventListener('mousemove', handleOnMouseMove);
+      window.document.removeEventListener('mouseup', handleOnMouseUp);
+      window.document.removeEventListener('mousemove', handleOnMouseMove);
+      window.removeEventListener('resize', handleOnResize);
     }
-  }, [handleOnMouseUp, handleOnMouseMove]);
+  }, [handleOnMouseUp, handleOnMouseMove, handleOnResize]);
 
   return (
     <div className="photo-gallery">
@@ -271,7 +298,7 @@ const PhotoGallery = (props) => {
                     className="gallery-img"
                     draggable="false"
                     src={image.url}
-                    alt={image.caption}
+                    alt="dog"
                     loading="lazy"
                   / >
                 </div>
