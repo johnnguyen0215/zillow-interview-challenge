@@ -17,12 +17,11 @@ const PhotoGallery = (props) => {
   const mouseDownElement = useRef(null);
   const prevImageNum = useRef(imageNum);
 
-  const imageRefs = useRef([]);
+  const slideRefs = useRef([]);
   const sliderRef = useRef(null);
 
   const prevPageX = useRef(null);
   const prevTouchClientX = useRef(null);
-  const blankImgRef = useRef(null)
 
   const reverse = useRef(false);
 
@@ -39,18 +38,18 @@ const PhotoGallery = (props) => {
   }
 
   const processScroll = useCallback((pageX, prevPageXRef) => {
-    if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.current.length - 2].offsetLeft && !reverse.current) {
-      sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
+    if (sliderRef.current.scrollLeft >= slideRefs.current[galleryImages.current.length - 2].offsetLeft && !reverse.current) {
+      sliderRef.current.scrollLeft = slideRefs.current[1].offsetLeft;
       reverse.current = false;
     }
 
-    if (sliderRef.current.scrollLeft >= imageRefs.current[galleryImages.current.length - 1].offsetLeft && reverse.current) {
-      sliderRef.current.scrollLeft = imageRefs.current[2].offsetLeft;
+    if (sliderRef.current.scrollLeft >= slideRefs.current[galleryImages.current.length - 1].offsetLeft && reverse.current) {
+      sliderRef.current.scrollLeft = slideRefs.current[2].offsetLeft;
       reverse.current = false;
     }
 
-    if (sliderRef.current.scrollLeft <= imageRefs.current[1].offsetLeft) {
-      sliderRef.current.scrollLeft = imageRefs.current[galleryImages.current.length - 2].offsetLeft;
+    if (sliderRef.current.scrollLeft <= slideRefs.current[1].offsetLeft) {
+      sliderRef.current.scrollLeft = slideRefs.current[galleryImages.current.length - 2].offsetLeft;
       reverse.current = true;
     }
 
@@ -61,6 +60,38 @@ const PhotoGallery = (props) => {
 
     prevPageXRef.current = pageX;
   }, [galleryImages]);
+
+  const scrollToClosestImage = useCallback(() => {
+    const scrollLeft = sliderRef.current.scrollLeft;
+
+    const leftImageIndex = slideRefs.current?.findIndex((imageRef) => {
+      return scrollLeft >= imageRef.offsetLeft && scrollLeft < imageRef.offsetLeft + imageRef.offsetWidth;
+    });
+
+    const rightImageIndex = leftImageIndex + 1;
+
+    const leftImage = slideRefs.current[leftImageIndex];
+    const rightImage = slideRefs.current[rightImageIndex];
+
+    const leftDisplayedWidth = (leftImage.offsetLeft + leftImage.offsetWidth) - scrollLeft;
+    const rightDisplayedWidth = (rightImage.offsetWidth - (rightImage.offsetLeft - scrollLeft));
+
+    let closestImageIndex = null;
+    let closestImage = null;
+
+    if (leftDisplayedWidth < rightDisplayedWidth) {
+      closestImage = rightImage;
+      closestImageIndex = rightImageIndex;
+    } else {
+      closestImage = leftImage;
+      closestImageIndex = leftImageIndex;
+    }
+
+    scrollToSlide(closestImage)
+
+    prevImageNum.current = closestImageIndex;
+    setImageNum(closestImageIndex);
+  }, []);
 
 
   const handleNavigateBefore = () => {
@@ -82,11 +113,11 @@ const PhotoGallery = (props) => {
 
     const galleryLength = galleryImages.current.length;
 
-    if (imageNum === galleryLength - 3) {
+    if (imageNum === galleryLength - 3) { // Last image
       setImageNum(1);
-    } else if (imageNum === galleryLength - 2) {
+    } else if (imageNum === galleryLength - 2) { // Clone of first image
       setImageNum(2);
-    } else if (imageNum === galleryLength - 1) {
+    } else if (imageNum === galleryLength - 1) { // Clone of second image
       setImageNum(3);
     }  else {
       setImageNum(imageNum + 1);
@@ -113,7 +144,7 @@ const PhotoGallery = (props) => {
       prevPageX.current = null;
     }
 
-  }, [mouseDownElement, buttonsDisabledRef]);
+  }, [mouseDownElement, buttonsDisabledRef, scrollToClosestImage]);
 
   const handleOnTouchMove = (event) => {
     const { touches } = event;
@@ -124,19 +155,32 @@ const PhotoGallery = (props) => {
   const handleOnResize = useCallback((event) => {
     const currentInnerWidth = event.target.innerWidth;
 
+    const setScrollPosition = () => {
+      sliderRef.current.scrollLeft = slideRefs.current[imageNum].offsetLeft;
+      prevInnerWidth.current = currentInnerWidth;
+    }
+
     if (prevInnerWidth.current) {
-      if ((prevInnerWidth.current > 1200 &&  currentInnerWidth <= 1200) || (prevInnerWidth.current < 1200 &&  currentInnerWidth >= 1200)) {
-        sliderRef.current.scrollLeft = imageRefs.current[imageNum].offsetLeft;
-        prevInnerWidth.current = currentInnerWidth;
-      } else if ((prevInnerWidth.current > 992 && currentInnerWidth <= 992) || (prevInnerWidth.current < 992 && currentInnerWidth >= 992)) {
-        sliderRef.current.scrollLeft = imageRefs.current[imageNum].offsetLeft;
-        prevInnerWidth.current = currentInnerWidth;
-      } else if ((prevInnerWidth.current > 768 && currentInnerWidth <= 768) || (prevInnerWidth.current < 768 && currentInnerWidth >= 768)) {
-        sliderRef.current.scrollLeft = imageRefs.current[imageNum].offsetLeft;
-        prevInnerWidth.current = currentInnerWidth;
-      } else if ((prevInnerWidth.current > 480 && currentInnerWidth <= 480) || (prevInnerWidth.current < 480 && currentInnerWidth >= 480)) {
-        sliderRef.current.scrollLeft = imageRefs.current[imageNum].offsetLeft;
-        prevInnerWidth.current = currentInnerWidth;
+      if (
+        (prevInnerWidth.current > 1200 &&  currentInnerWidth <= 1200) ||
+        (prevInnerWidth.current < 1200 &&  currentInnerWidth >= 1200)
+      ) {
+        setScrollPosition();
+      } else if (
+        (prevInnerWidth.current > 992 && currentInnerWidth <= 992) ||
+        (prevInnerWidth.current < 992 && currentInnerWidth >= 992)
+      ) {
+        setScrollPosition();
+      } else if (
+        (prevInnerWidth.current > 768 && currentInnerWidth <= 768) ||
+        (prevInnerWidth.current < 768 && currentInnerWidth >= 768)
+      ) {
+        setScrollPosition();
+      } else if (
+        (prevInnerWidth.current > 480 && currentInnerWidth <= 480) ||
+        (prevInnerWidth.current < 480 && currentInnerWidth >= 480)
+      ) {
+        setScrollPosition();
       }
     }
 
@@ -156,45 +200,9 @@ const PhotoGallery = (props) => {
     prevTouchClientX.current = null;
   }
 
-  const scrollToClosestImage = (instant) => {
-    const scrollLeft = sliderRef.current.scrollLeft;
-
-    const leftImageIndex = imageRefs?.current?.findIndex((imageRef) => {
-      return scrollLeft >= imageRef.offsetLeft && scrollLeft < imageRef.offsetLeft + imageRef.offsetWidth;
-    });
-
-    const rightImageIndex = leftImageIndex + 1;
-
-    const leftImage = imageRefs.current[leftImageIndex];
-    const rightImage = imageRefs.current[rightImageIndex];
-
-    const leftDisplayedWidth = (leftImage.offsetLeft + leftImage.offsetWidth) - scrollLeft;
-    const rightDisplayedWidth = (rightImage.offsetWidth - (rightImage.offsetLeft - scrollLeft));
-
-    let closestImageIndex = null;
-    let closestImage = null;
-
-    if (leftDisplayedWidth < rightDisplayedWidth) {
-      closestImage = rightImage;
-      closestImageIndex = rightImageIndex;
-    } else {
-      closestImage = leftImage;
-      closestImageIndex = leftImageIndex;
-    }
-
-    scrollToSlide(closestImage)
-
-    prevImageNum.current = closestImageIndex;
-    setImageNum(closestImageIndex);
-  }
-
   useLayoutEffect(() => {
-    const image = new Image(0,0);
-    image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    blankImgRef.current = image;
-
-    if (imageRefs.current.length > 0) {
-      sliderRef.current.scrollLeft = imageRefs.current[1].offsetLeft;
+    if (slideRefs.current.length > 0) {
+      scrollToSlide(slideRefs.current[1]);
     }
   }, []);
 
@@ -202,7 +210,7 @@ const PhotoGallery = (props) => {
     const prevNum = prevImageNum.current;
     const galleryLength = galleryImages.current?.length;
     const slider = sliderRef.current;
-    const imgRefs = imageRefs.current;
+    const imgRefs = slideRefs.current;
 
     if (
       galleryLength > 0 &&
@@ -236,7 +244,7 @@ const PhotoGallery = (props) => {
       }
 
       if (scrollToNum) {
-        scrollToSlide(imageRefs.current[scrollToNum]);
+        scrollToSlide(slideRefs.current[scrollToNum]);
 
         prevImageNum.current = scrollToNum;
 
@@ -278,7 +286,7 @@ const PhotoGallery = (props) => {
                 onTouchMove={handleOnTouchMove}
                 onTouchEnd={handleOnTouchEnd}
                 ref={(node) => {
-                  imageRefs.current[index] = node;
+                  slideRefs.current[index] = node;
                 }}
                 key={index}
               >

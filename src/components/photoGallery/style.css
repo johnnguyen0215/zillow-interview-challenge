@@ -124,17 +124,17 @@ img {
 
 @media (min-width: 480px) {
   .photo-gallery {
-    height: 28rem;
-    width: 40rem;
+    height: 25rem;
+    width: 35rem;
   }
 
   .img-caption-container {
-    max-height: 28rem;
+    max-height: 25rem;
     overflow-y: scroll;
   }
 
   .image-container {
-    width: 40rem;
+    width: 35rem;
   }
 }
 
