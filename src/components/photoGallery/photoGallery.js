@@ -8,7 +8,7 @@ import ClampLines from 'react-clamp-lines';
 
 const PhotoGallery = (props) => {
   const { images = [] } = props;
-  const [imageNum, setImageNum] = useState(1);
+  const [imageNum, setImageNum] = useState(images.length > 1 ? 1 : 0);
 
   const [buttonsDisabled, _setButtonsDisabled] = useState(false);
   const buttonsDisabledRef = useRef(buttonsDisabled);
@@ -26,13 +26,10 @@ const PhotoGallery = (props) => {
 
   const prevPageX = useRef(null);
   const prevTouchClientX = useRef(null);
-  const prevImageNum = useRef(imageNum);
 
   const reverse = useRef(false);
 
   const clampRefs = useRef([]);
-
-  const [galleryImages, setGalleryImages] = useState([]);
 
   const [clampsClosed, setClampsClosed] = useState(false);
 
@@ -59,7 +56,7 @@ const PhotoGallery = (props) => {
   const processScroll = useCallback((pageX, prevPageXRef) => {
     const scrollLeft = sliderRef.current.scrollLeft;
     const slides = slideRefs.current;
-    const galleryLength = galleryImages.length;
+    const galleryLength = images.length;
 
     if (scrollLeft >= slides[galleryLength - 2].offsetLeft && !reverse.current) {
       sliderRef.current.scrollLeft = slides[1].offsetLeft;
@@ -82,19 +79,19 @@ const PhotoGallery = (props) => {
     }
 
     prevPageXRef.current = pageX;
-  }, [galleryImages]);
+  }, [images]);
 
   const getOriginalIndex = useCallback((cloneIndex) => {
     if (cloneIndex === 0) {
-      return galleryImages.length - 3;
-    } else if (cloneIndex === galleryImages.length - 2) {
+      return images.length - 3;
+    } else if (cloneIndex === images.length - 2) {
       return 1;
-    } else if (cloneIndex === galleryImages.length - 1) {
+    } else if (cloneIndex === images.length - 1) {
       return 2;
     }
 
     return -1;
-  }, [galleryImages]);
+  }, [images]);
 
   const isCloneIndex = useCallback((index) => {
     return getOriginalIndex(index) !== -1;
@@ -154,8 +151,8 @@ const PhotoGallery = (props) => {
   }, [setCloneIndex, getOriginalIndex, isCloneIndex]);
 
 
-  const isGalleryImage = (element) => {
-    return element?.classList?.contains('gallery-img');
+  const isSlideImage = (element) => {
+    return element?.classList?.contains('slide-img');
   }
 
   const handleNavigateBefore = () => {
@@ -163,7 +160,7 @@ const PhotoGallery = (props) => {
     setSlideDirection('before');
 
     if (imageNum === 1) {
-      setImageNum(galleryImages.length - 3);
+      setImageNum(images.length - 3);
     } else {
       setImageNum(imageNum - 1);
     }
@@ -185,7 +182,7 @@ const PhotoGallery = (props) => {
 
     closeAllClamps();
 
-    if (imageNum === (galleryImages.length - 3)) {
+    if (imageNum === (images.length - 3)) {
       setImageNum(1);
     } else {
       setImageNum(imageNum + 1);
@@ -201,7 +198,7 @@ const PhotoGallery = (props) => {
   }
 
   const handleOnMouseMove = useCallback((event) => {
-    if (isGalleryImage(mouseDownElement.current) && !buttonsDisabledRef.current) {
+    if (isSlideImage(mouseDownElement.current) && !buttonsDisabledRef.current) {
       if (!clampsClosed) {
         closeAllClamps();
 
@@ -213,7 +210,7 @@ const PhotoGallery = (props) => {
   }, [mouseDownElement, processScroll, buttonsDisabledRef, setClampsClosed, clampsClosed]);
 
   const handleOnMouseUp = useCallback(() => {
-    if (isGalleryImage(mouseDownElement.current) && !buttonsDisabledRef.current) {
+    if (isSlideImage(mouseDownElement.current) && !buttonsDisabledRef.current) {
       scrollToClosestImage();
       setClampsClosed(false);
       mouseDownElement.current = null;
@@ -244,23 +241,23 @@ const PhotoGallery = (props) => {
 
     if (prevInnerWidth.current) {
       if (
-        (prevInnerWidth.current > 1200 &&  currentInnerWidth <= 1200) ||
-        (prevInnerWidth.current < 1200 &&  currentInnerWidth >= 1200)
+        (prevInnerWidth.current >= 1200 &&  currentInnerWidth <= 1200) ||
+        (prevInnerWidth.current <= 1200 &&  currentInnerWidth >= 1200)
       ) {
         setScrollPosition();
       } else if (
-        (prevInnerWidth.current > 992 && currentInnerWidth <= 992) ||
-        (prevInnerWidth.current < 992 && currentInnerWidth >= 992)
+        (prevInnerWidth.current >= 992 && currentInnerWidth <= 992) ||
+        (prevInnerWidth.current <= 992 && currentInnerWidth >= 992)
       ) {
         setScrollPosition();
       } else if (
-        (prevInnerWidth.current > 768 && currentInnerWidth <= 768) ||
-        (prevInnerWidth.current < 768 && currentInnerWidth >= 768)
+        (prevInnerWidth.current >= 768 && currentInnerWidth <= 768) ||
+        (prevInnerWidth.current <= 768 && currentInnerWidth >= 768)
       ) {
         setScrollPosition();
       } else if (
-        (prevInnerWidth.current > 480 && currentInnerWidth <= 480) ||
-        (prevInnerWidth.current < 480 && currentInnerWidth >= 480)
+        (prevInnerWidth.current >= 480 && currentInnerWidth <= 480) ||
+        (prevInnerWidth.current <= 480 && currentInnerWidth >= 480)
       ) {
         setScrollPosition();
       }
@@ -283,31 +280,16 @@ const PhotoGallery = (props) => {
     prevTouchClientX.current = null;
   }
 
-  useEffect(() => {
-    if (images.length === 1) {
-      setGalleryImages([images[0]]);
-    } else {
-      setGalleryImages(
-        [
-          images[images.length - 1],
-          ...images,
-          images[0],
-          images[1],
-        ]
-      );
-    }
-  }, [images]);
-
   useLayoutEffect(() => {
     if (slideRefs.current.length > 1) {
       // Scroll to the first image, its index is 1 due to the clones.
       sliderRef.current.scrollLeft = slideRefs.current[1].offsetLeft;
     }
-  }, [galleryImages])
+  }, [images])
 
 
   useEffect(() => {
-    const galleryLength = galleryImages?.length;
+    const galleryLength = images?.length;
     const slider = sliderRef.current;
     const imgRefs = slideRefs.current;
 
@@ -339,14 +321,12 @@ const PhotoGallery = (props) => {
       if (scrollToNum) {
         scrollToSlide(slideRefs.current[scrollToNum]);
 
-        prevImageNum.current = scrollToNum;
-
         setTimeout(() => {
           setButtonsDisabled(false);
         }, 1000)
       }
     }
-  }, [imageNum, galleryImages, slideDirection, cloneIndex, resetClonePosition])
+  }, [imageNum, images, slideDirection, cloneIndex, resetClonePosition])
 
   useEffect(() => {
     if (images.length > 1) {
@@ -368,19 +348,25 @@ const PhotoGallery = (props) => {
     <div className="photo-gallery">
       {
         images.length > 1 &&
-        <Fab disabled={buttonsDisabled} onClick={handleNavigateBefore} className="fab-button -left">
+        <Fab aria-label="Previous image" disabled={buttonsDisabled} onClick={handleNavigateBefore} className="fab-button -left">
           <NavigateBefore fontSize="large" />
         </Fab>
       }
       <div className="slider" ref={sliderRef}>
         {
-          galleryImages.map((image, index) => {
+          images.map((image, index) => {
+            const isActive = imageNum === index;
+
             const classes = classnames({
               'slide-container': true,
-              '-active': imageNum === index,
+              '-active': isActive,
             });
+
+            const ariaLabel = isActive ? 'Slide active' : 'Slide';
+
             return (
               <div
+                aria-label={ariaLabel}
                 className={classes}
                 onMouseDown={images.length > 1 ? handleOnMouseDown : undefined}
                 onTouchMove={images.length > 1 ? handleOnTouchMove : undefined}
@@ -402,7 +388,7 @@ const PhotoGallery = (props) => {
                 </div>
                 <div className="image-container">
                   <img
-                    className="gallery-img"
+                    className="slide-img"
                     draggable="false"
                     src={image.url}
                     alt="dog"
@@ -416,7 +402,7 @@ const PhotoGallery = (props) => {
       </div>
       {
         images.length > 1 &&
-        <Fab disabled={buttonsDisabled} onClick={handleNavigateNext} className="fab-button -right">
+        <Fab aria-label="Next image" disabled={buttonsDisabled} onClick={handleNavigateNext} className="fab-button -right">
             <NavigateNext fontSize="large" />
         </Fab>
       }

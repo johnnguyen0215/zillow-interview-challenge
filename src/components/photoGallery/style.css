@@ -76,7 +76,6 @@ img {
 .clamp-lines__button:hover {
   border: 2px solid black;
   border-radius: none;
-  outline: none;
   background-color: black;
   color: white;
 }
