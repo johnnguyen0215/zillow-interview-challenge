@@ -58,6 +58,7 @@ img {
   width: 100%;
   padding: 1rem;
   box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.25);
+  overflow: auto;
 }
 
 .clamp-lines__button {
@@ -68,7 +69,7 @@ img {
   text-transform: uppercase;
   border-radius: none;
   cursor: pointer;
-  ouline: none;
+  outline: none;
   transition: all 0.5s;
 }
 
@@ -114,7 +115,6 @@ img {
 
   .img-caption-container {
     max-height: 25rem;
-    overflow-y: scroll;
   }
 
   .image-container {
@@ -130,7 +130,6 @@ img {
 
   .img-caption-container {
     max-height: 25rem;
-    overflow-y: scroll;
   }
 
   .image-container {
@@ -146,14 +145,12 @@ img {
 
   .img-caption-container {
     max-height: 35rem;
-    overflow-y: scroll;
   }
 
   .image-container {
     width: 50rem;
   }
 }
-
 
 @media screen and (min-width: 992px) {
   .photo-gallery {
@@ -163,7 +160,6 @@ img {
 
   .img-caption-container {
     max-height: 42rem;
-    overflow-y: scroll;
   }
 
   .image-container {
@@ -179,7 +175,6 @@ img {
 
   .img-caption-container {
     max-height: 50rem;
-    overflow-y: scroll;
   }
 
   .image-container {

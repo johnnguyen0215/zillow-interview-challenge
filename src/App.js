@@ -8,6 +8,7 @@ smoothscroll.polyfill();
 function App() {
   return (
     <div className="App">
+      <h1 className="heading">Slider App</h1>
       <PhotoGallery images={data} />
     </div>
   );
