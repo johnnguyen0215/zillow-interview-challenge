@@ -10,7 +10,7 @@ const PhotoGallery = (props) => {
   const { images = [] } = props;
   const [imageNum, setImageNum] = useState(images.length > 1 ? 1 : 0);
 
-  const [buttonsDisabled, _setButtonsDisabled] = useState(false);
+  const [buttonsDisabled, setButtonsDisabled] = useState(false);
   const buttonsDisabledRef = useRef(buttonsDisabled);
 
   const [slideDirection, setSlideDirection] = useState('');
@@ -32,11 +32,6 @@ const PhotoGallery = (props) => {
   const clampRefs = useRef([]);
 
   const [clampsClosed, setClampsClosed] = useState(false);
-
-  const setButtonsDisabled = (disabledValue) => {
-    buttonsDisabledRef.current = disabledValue;
-    _setButtonsDisabled(disabledValue);
-  }
 
   const pauseEvent = (event) => {
     if (event.stopPropagation) {
@@ -166,6 +161,10 @@ const PhotoGallery = (props) => {
     }
   }
 
+  useEffect(() => {
+    buttonsDisabledRef.current = buttonsDisabled;
+  }, [buttonsDisabled])
+
   const closeAllClamps = () => {
     clampRefs.current.forEach((clamp) => {
       clamp.watch = false;
@@ -293,6 +292,8 @@ const PhotoGallery = (props) => {
     const slider = sliderRef.current;
     const imgRefs = slideRefs.current;
 
+    let timeout = null;
+
     if (galleryLength > 0) {
       let scrollToNum = null;
 
@@ -321,10 +322,16 @@ const PhotoGallery = (props) => {
       if (scrollToNum) {
         scrollToSlide(slideRefs.current[scrollToNum]);
 
-        setTimeout(() => {
+        // I could have created a method that promisified the scrollTo offset
+        // but I am using a timeout here due to lack of "time".
+        timeout = setTimeout(() => {
           setButtonsDisabled(false);
         }, 1000)
       }
+    }
+
+    return () => {
+      clearTimeout(timeout);
     }
   }, [imageNum, images, slideDirection, cloneIndex, resetClonePosition])
 
@@ -345,7 +352,7 @@ const PhotoGallery = (props) => {
   }, [handleOnMouseUp, handleOnMouseMove, handleOnResize, images]);
 
   return (
-    <div className="photo-gallery">
+    <div className="photo-gallery" aria-label="Photo Gallery">
       {
         images.length > 1 &&
         <Fab aria-label="Previous image" disabled={buttonsDisabled} onClick={handleNavigateBefore} className="fab-button -left">
@@ -391,7 +398,7 @@ const PhotoGallery = (props) => {
                     className="slide-img"
                     draggable="false"
                     src={image.url}
-                    alt="dog"
+                    alt="slide"
                     loading="lazy"
                   / >
                 </div>

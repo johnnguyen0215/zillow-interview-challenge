@@ -14,9 +14,9 @@
  * All the above cases with 2+ images
  */
 
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import PhotoGallery from './photoGallery';
-import dataJson from '../../data.json';
+import dataJson from '../../../public/data.json';
 
 window.HTMLElement.prototype.scrollTo = jest.fn()
 
@@ -66,26 +66,39 @@ describe('PhotoGallery', () => {
       expect(rightNavButton).toBeInTheDocument();
     });
 
-    test('should navigate to the correct next element on right nav click', () => {
+    test('should navigate to the correct next element on right nav click', async () => {
       render(<PhotoGallery images={images} />);
 
       const rightNavButton = screen.queryByLabelText('Next image');
       fireEvent.click(rightNavButton);
-
-      const activeElement = screen.getByLabelText('Slide active').querySelector('img');
-
+      let activeElement = screen.getByLabelText('Slide active').querySelector('img');
       expect(activeElement).toHaveAttribute('src', dataJson[1].url);
+
+      await waitFor(() => {
+        expect(rightNavButton).not.toHaveAttribute('disabled');
+      });
+
+      fireEvent.click(rightNavButton);
+      activeElement = screen.getByLabelText('Slide active').querySelector('img');
+      expect(activeElement).toHaveAttribute('src', dataJson[2].url);
     });
 
-    test('should navigate to the correct next element on left nav click', () => {
+    test('should navigate to the correct next element on left nav click', async() => {
       render(<PhotoGallery images={images} />);
 
       const leftNavButton = screen.queryByLabelText('Previous image');
+
       fireEvent.click(leftNavButton);
-
-      const activeElement = screen.getByLabelText('Slide active').querySelector('img');
-
+      let activeElement = screen.getByLabelText('Slide active').querySelector('img');
       expect(activeElement).toHaveAttribute('src', dataJson[dataJson.length - 1].url);
+
+      await waitFor(() => {
+        expect(leftNavButton).not.toHaveAttribute('disabled');
+      });
+
+      fireEvent.click(leftNavButton);
+      activeElement = screen.getByLabelText('Slide active').querySelector('img');
+      expect(activeElement).toHaveAttribute('src', dataJson[dataJson.length - 2].url);
     });
-  })
+  });
 })

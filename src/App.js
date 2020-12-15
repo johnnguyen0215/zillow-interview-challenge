@@ -1,6 +1,5 @@
 import './App.css';
 import PhotoGallery from './components/photoGallery/photoGallery';
-import data from './data.json';
 import smoothscroll from 'smoothscroll-polyfill';
 import { useEffect, useState } from 'react';
 
@@ -8,21 +7,49 @@ smoothscroll.polyfill();
 
 function App() {
   const [images, setImages ] = useState([]);
+  const [imageData, setImageData] = useState([]);
+
+  const getData = async () => {
+    let data = null
+
+    try {
+      data = await fetch('./data.json', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+    } catch (err) {
+      throw err;
+    }
+
+    return data.json();
+  }
 
   useEffect(() => {
-    if (data.length === 1) {
-      setImages([data[0]]);
-    } else {
+    const fetchData = async () => {
+      const data = await getData();
+
+      setImageData(data);
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (imageData.length === 1) {
+      setImages([imageData[0]]);
+    } else if (imageData.length > 1) {
       setImages(
         [
-          data[data.length - 1],
-          ...data,
-          data[0],
-          data[1],
+          imageData[imageData.length - 1],
+          ...imageData,
+          imageData[0],
+          imageData[1],
         ]
       );
     }
-  }, []);
+  }, [imageData]);
 
   return (
     <div className="App">
